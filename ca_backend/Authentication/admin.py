@@ -7,9 +7,12 @@ from .send_email import send_approved_email
 from decouple import config
 import smtplib
 
-connection = smtplib.SMTP("smtp.gmail.com", 587)
-connection.starttls()
-connection.login(config("EMAIL_HOST_USER"), config("EMAIL_HOST_PASSWORD"))
+try:
+    connection = smtplib.SMTP("smtp.gmail.com", port=587)
+    connection.starttls()
+    connection.login(user=config("EMAIL_HOST_USER"), password=config("EMAIL_HOST_PASSWORD"))
+except:
+    connection = None
 
 class UserAccountAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'role', 'status')
@@ -37,9 +40,9 @@ class UserAccountAdmin(admin.ModelAdmin):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename=emails.csv'
         writer = csv.writer(response)
-        writer.writerow(["Username", "Email"])
+        writer.writerow(["Email"])
         for user in queryset:
-            writer.writerow([user.username, user.email])
+            writer.writerow([user.email])
         return response
     
     @admin.action(description='Delete Admin Logs')
@@ -67,9 +70,9 @@ class UserProfileAdmin(admin.ModelAdmin):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename=whatsapp_no.csv'
         writer = csv.writer(response)
-        writer.writerow(["User", "First Name", "Last Name", "WhatsApp No."])
+        writer.writerow(["User", "WhatsApp Number"])
         for user in queryset:
-            writer.writerow([user.user_name, user.first_name, user.last_name, user.whatsapp_no]) 
+            writer.writerow([user.user_name, user.whatsapp_no])  
         return response
     
     actions = [copy_whatsapp_no]

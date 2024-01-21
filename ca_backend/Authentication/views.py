@@ -10,6 +10,7 @@ from rest_framework_jwt.settings import api_settings
 from django.contrib.auth import authenticate, login, logout
 from drf_yasg.utils import swagger_auto_schema
 from django.http import HttpResponseRedirect
+from drf_yasg import openapi
 
 
 from ca_backend.permissions import IsAdminUser
@@ -35,9 +36,13 @@ from django.db.models import Q
 from decouple import config
 import smtplib
 
-connection = smtplib.SMTP("smtp.gmail.com", port=587)
-connection.starttls()
-connection.login(user=config("EMAIL_HOST_USER"), password=config("EMAIL_HOST_PASSWORD"))
+try:
+    connection = smtplib.SMTP("smtp.gmail.com", port=587)
+    connection.starttls()
+    connection.login(user=config("EMAIL_HOST_USER"), password=config("EMAIL_HOST_PASSWORD"))
+except:
+    connection = None
+
 
 
 # Create your views here.
@@ -196,7 +201,7 @@ class VerifyAccountView(views.APIView):
             tokens=[vm_ob.email_token for vm_ob in vm_obs]
             for i,token in enumerate(tokens):
                 serializer.data[i]["email_token"]=token
-                serializer.data[i]['is_verified'] = (vm_obs[i].userid.status == "V")
+                serializer.data[i]['is_verified'] = vm_obs[i].userid.status == 'V' 
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(
@@ -208,7 +213,13 @@ class VerifyAccountView(views.APIView):
         responses={
             200: """{"success": "User verified successfully!"}""",
             400: """{"error": "Bad Request"}""",
-        }
+        },
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'token': openapi.Schema(type=openapi.TYPE_STRING, description='Email verification token'),
+            },
+        ),
     )
     def post(self, request):
         try:
@@ -232,7 +243,6 @@ class VerifyAccountView(views.APIView):
                 )
             
             user.status = "V"
-            verif_row.delete()
             user.save()
             send_approved_email(user.email, user.username, connection)
             return Response(

@@ -3,19 +3,22 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+import os
+from django.conf import settings
 
 try:
     SUPPORT_EMAIL = config("SUPPORT_EMAIL")
 except:
     SUPPORT_EMAIL = "tech@technex.in"
 
-LOGO_FILE_PATH = "./ca_backend/logo/Asset 3.png"
+LOGO_FILE_PATH = os.path.join(settings.STATIC_ROOT, 'Asset 3.png')
+IMAGE = None 
+if os.path.exists(LOGO_FILE_PATH):
+    with open(LOGO_FILE_PATH, 'rb') as fp:
+        IMAGE = MIMEImage(fp.read())
 
-with open(LOGO_FILE_PATH, 'rb') as fp:
-    IMAGE = MIMEImage(fp.read())
-
-    IMAGE.add_header('Content-ID', '<logo>')
-    IMAGE.add_header('Content-Disposition', 'inline')  # Set the Content-Disposition header to "inline"
+        IMAGE.add_header('Content-ID', '<logo>')
+        IMAGE.add_header('Content-Disposition', 'inline')  # Set the Content-Disposition header to "inline"
 
 #todo: improve messages
 def send_email_cnf_email(rec_email, username, connection: smtplib.SMTP = None):
@@ -24,21 +27,12 @@ def send_email_cnf_email(rec_email, username, connection: smtplib.SMTP = None):
     msg['To'] = rec_email
     msg['Subject'] = "Technex'24 - Email Verification Successful"
     # Use images and style the email
-    
-    if IMAGE:
-        msg.attach(IMAGE)
-    else:
-        with open(LOGO_FILE_PATH, 'rb') as fp:
-            img = MIMEImage(fp.read())
-        img.add_header('Content-ID', '<logo>')
-        img.add_header('Content-Disposition', 'inline')  # Set the Content-Disposition header to "inline"
-        msg.attach(img)
 
     html = f"""\
     <html>
         <head></head>
         <body>
-        <center><img src="cid:logo" alt="logo" border="0" width="200" height="200"></center>
+        <center><img src="cid:logo" alt="Technex '24" border="0" width="200" height="200"></center>
             <h3>Dear {username},</h3>
             <br>
             <p>Great news! Your email address has been successfully verified for your Technex'24 account. Please wait for our admins to verify your account. Once that is done we will contact you and you will be able to log in to your account.</p>
@@ -55,8 +49,7 @@ def send_email_cnf_email(rec_email, username, connection: smtplib.SMTP = None):
     """
     body = html
     msg.attach(MIMEText(body, 'html'))
-    text = msg.as_string()
-    send(rec_email, text, connection)
+    send(rec_email, msg, connection)
 
 
 def send_email_verif_email(rec_email, token, username, connection: smtplib.SMTP = None):
@@ -66,33 +59,16 @@ def send_email_verif_email(rec_email, token, username, connection: smtplib.SMTP 
     msg['Subject'] = "Technex'24 - Email Verification"
     # Use images and style the email
     
-
-    if IMAGE:
-        msg.attach(IMAGE)
-    else:
-        with open(LOGO_FILE_PATH, 'rb') as fp:
-            img = MIMEImage(fp.read())
-        img.add_header('Content-ID', '<logo>')
-        img.add_header('Content-Disposition', 'inline')  # Set the Content-Disposition header to "inline"
-        msg.attach(img)
-
     html = f"""\
     <html>
         <head></head>
         <body>
-        <center><img src="cid:logo" alt="logo" border="0" width="200" height="200"></center>
+        <center><img src="cid:logo" alt="Technex '24" border="0" width="200" height="200"></center>
             <h3>Dear {username},</h3>
             <br>
             <p>Congratulations! Your account on Technex'24 has been successfully created. Please click on the following button to confirm and activate your account</p>
             <br>
-            <center><a href="{config('BACKEND_URL')}/auth/verifyemail/{token}/"><button style="background-color: #4CAF50; /* Green */
-    border: none;
-    color: white;
-    padding: 15px 32px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    hover: cursor: pointer;">Verify Email</button></a></center>
+            <center><a href="{config('BACKEND_URL')}/auth/verifyemail/{token}/"><button style="background-color: #4CAF50; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; cursor: pointer;">Verify Email</button></a></center>
             <br>
             <p>If you encounter any issues or have any questions, feel free to reach out to our support team at {SUPPORT_EMAIL}.</p>
             <p>Best regards,</p>
@@ -104,8 +80,7 @@ def send_email_verif_email(rec_email, token, username, connection: smtplib.SMTP 
     """
     body = html
     msg.attach(MIMEText(body, 'html'))
-    text = msg.as_string()
-    send(rec_email, text, connection)
+    send(rec_email, msg, connection)
 
 def send_approved_email(rec_email, username, connection: smtplib.SMTP = None):
     msg = MIMEMultipart()
@@ -113,19 +88,11 @@ def send_approved_email(rec_email, username, connection: smtplib.SMTP = None):
     msg['To'] = rec_email
     msg['Subject'] = "Technex'24 - Account Approved"
     # Use images and style the email
-    if IMAGE:
-        msg.attach(IMAGE)
-    else:
-        with open(LOGO_FILE_PATH, 'rb') as fp:
-            img = MIMEImage(fp.read())
-        img.add_header('Content-ID', '<logo>')
-        img.add_header('Content-Disposition', 'inline')  # Set the Content-Disposition header to "inline"
-        msg.attach(img)
     html = f"""\
     <html>
         <head></head>
         <body>
-        <center><img src="cid:logo" alt="logo" border="0" width="200" height="200"></center>
+        <center><img src="cid:logo" alt="Technex '24" border="0" width="200" height="200"></center>
             <h3>Dear {username},</h3>
             <br>
             <p>We are pleased to inform you that your Technex'24 account has been successfully verified. Thank you for completing the verification process promptly.</p>
@@ -138,28 +105,19 @@ def send_approved_email(rec_email, username, connection: smtplib.SMTP = None):
     """
     body = html
     msg.attach(MIMEText(body, 'html'))
-    text = msg.as_string()
-    send(rec_email, text, connection)
+    send(rec_email, msg, connection)
 
 def send_otp_email(rec_email,otp, username, connection: smtplib.SMTP = None):
     msg = MIMEMultipart()
     msg['From'] = config("EMAIL_HOST_USER")
     msg['To'] = rec_email
     msg['Subject'] = "Technex'24 - Password Reset OTP"
-    # Use images and style the email
-    if IMAGE:
-        msg.attach(IMAGE)
-    else:
-        with open(LOGO_FILE_PATH, 'rb') as fp:
-            img = MIMEImage(fp.read())
-        img.add_header('Content-ID', '<logo>')
-        img.add_header('Content-Disposition', 'inline')  # Set the Content-Disposition header to "inline"
-        msg.attach(img)
+   
     html = f"""\
     <html>
         <head></head>
         <body>
-        <center><img src="cid:logo" alt="logo" border="0" width="200" height="200"></center>
+        <center><img src="cid:logo" alt="Technex '24" border="0" width="200" height="200"></center>
             <h3>Dear {username},</h3>
             <br>
             <p>Here is your OTP for verification:</p>
@@ -175,14 +133,26 @@ def send_otp_email(rec_email,otp, username, connection: smtplib.SMTP = None):
     """
     body = html
     msg.attach(MIMEText(body, 'html'))
-    text = msg.as_string()
-    send(rec_email, text, connection)
+    send(rec_email, msg, connection)
     
 
 def send(rec_email, msg, connection: smtplib.SMTP = None):
     """
     Function to send verification email to the user 
     """
+    # Add Image
+    if IMAGE:
+        msg.attach(IMAGE)
+    else:
+        if os.path.exists(LOGO_FILE_PATH):
+            with open(LOGO_FILE_PATH, 'rb') as fp:
+                img = MIMEImage(fp.read())
+            img.add_header('Content-ID', '<logo>')
+            img.add_header('Content-Disposition', 'inline')
+            msg.attach(img)
+    
+    msg = msg.as_string()
+
     if connection:
         connection.sendmail(config("EMAIL_HOST_USER"), rec_email, msg)
     else:
@@ -191,5 +161,4 @@ def send(rec_email, msg, connection: smtplib.SMTP = None):
         connection.login(config("EMAIL_HOST_USER"), config("EMAIL_HOST_PASSWORD"))
         connection.sendmail(config("EMAIL_HOST_USER"), rec_email, msg)
     
-
 

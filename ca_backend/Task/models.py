@@ -2,7 +2,7 @@ from django.db import models
 import datetime
 from PIL import Image
 from io import BytesIO
-from django.core.files.base import File
+from django.core.files import File
 # Create your models here.
 
 
@@ -12,7 +12,7 @@ def upload_to(instance, filename):
 def sumbission_upload_to(instance, filename):
     user = instance.user
     task = instance.task
-    return f"task_submissions/{user}_{task}_{filename}"
+    return f"task_submissions/{user.user_name}_{task}_{filename}"
 
 class Task(models.Model):
     """
@@ -49,7 +49,7 @@ class TaskSubmission(models.Model):
 
     def __str__(self):
         return self.task.title + " - " + self.user.user_name
-    
+
     def save(self, *args, **kwargs):
         if self.image:
             self.image = self.compressImage(self.image)
